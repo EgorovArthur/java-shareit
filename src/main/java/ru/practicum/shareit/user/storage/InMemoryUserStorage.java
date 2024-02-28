@@ -46,19 +46,21 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User getUserId(Long id) {
-        if (users.containsKey(id)) {
-            return users.get(id);
+        User user = users.get(id);
+        if (user != null) {
+            return user;
         } else {
-            throw new NotFoundException(String.format("Пользователь с id = %d не найден", id));
+            throw new NotFoundException(String.format("Пользователь с id = %d не найден.", id));
         }
     }
 
     @Override
     public void deleteUser(Long userId) {
-        if (users.containsKey(userId)) {
+        User user = users.get(userId);
+        if (user != null) {
             users.remove(userId);
         } else {
-            throw new NotFoundException(String.format("Пользователь с id = %d не найден", userId));
+            throw new NotFoundException(String.format("Пользователь с id = %d не найден.", userId));
         }
     }
 
