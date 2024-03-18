@@ -1,56 +1,76 @@
 package ru.practicum.shareit.user.service;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exceptoins.ValidationException;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.exceptoins.NotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.model.UserMapper;
-import ru.practicum.shareit.user.storage.UserStorage;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.Collection;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @Data
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
-    private final UserStorage userStorage;
+    private final UserRepository userRepository;
 
     @Override
-    public UserDto addUser(UserDto userDto) throws ValidationException {
+    @Transactional
+    public UserDto addUser(UserDto userDto) {
         User user = UserMapper.toUser(userDto);
         log.info("Пользователь {} добавлен", userDto);
-        return UserMapper.toUserDto(userStorage.addUser(user));
+        return UserMapper.toUserDto(userRepository.save(user));
     }
 
     @Override
-    public UserDto getUserId(Long userId) {
+    public UserDto getUserById(Long userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
         log.info("Получаем пользователя по ID: {}", userId);
-        return UserMapper.toUserDto(userStorage.getUserId(userId));
+        if (userOptional.isPresent()) {
+            return UserMapper.toUserDto(userOptional.get());
+        } else {
+            throw new NotFoundException(String.format("Пользователь с id = %d не найден.", userId));
+        }
     }
 
     @Override
-    public UserDto updateUser(Long userId, UserDto userDto) throws ValidationException {
-        User user = UserMapper.toUser(userDto);
-        log.info("Обновляем данные пользователя по ID: {}", userId);
-        return UserMapper.toUserDto(userStorage.updateUser(userId, user));
+    @Transactional
+    public UserDto updateUser(Long userId, UserDto userDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        if (userDto.getName() != null) {
+            user.setName(userDto.getName());
+        }
+        if (userDto.getEmail() != null) {
+            if (!userDto.getEmail().equals(user.getEmail())) {
+                user.setEmail(userDto.getEmail());
+            }
+        }
+        userRepository.save(user);
+        return UserMapper.toUserDto(user);
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long userId) {
         log.info("Удаляем пользователя по ID: {}", userId);
-        userStorage.deleteUser(userId);
+        userRepository.deleteById(userId);
     }
 
     @Override
     public Collection<UserDto> getUsers() {
         log.info("Получаем всех пользователей");
-        return userStorage.getUsers().stream()
+        return userRepository.findAll().stream()
                 .map(UserMapper::toUserDto)
                 .collect(Collectors.toList());
     }

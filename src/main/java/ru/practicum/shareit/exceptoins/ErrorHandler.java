@@ -23,8 +23,26 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
-    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleAccessException(final AccessException e) {
         return Map.of("Нет прав доступа", e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleBookingValidationException(final BookingValidationException e) {
+        return Map.of("Ошибка запроса на бронирование", e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleRequestException(final RequestException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleBadRequestException(final CommentRequestException e) {
+        return Map.of("Ошибка запроса ", e.getMessage());
     }
 }

@@ -30,12 +30,13 @@ public class UserController {
     //Получение пользователя по id
     @GetMapping("/{userId}")
     public UserDto getUserId(@PathVariable("userId") Long userId) {
-        return userService.getUserId(userId);
+        return userService.getUserById(userId);
     }
 
     //Обновление данных пользователя
     @PatchMapping("/{userId}")
-    public UserDto updateUser(@PathVariable("userId") Long userId, @RequestBody UserDto userDto) throws ValidationException {
+    public UserDto updateUser(@PathVariable("userId") Long userId, @RequestBody UserDto userDto)
+            throws ValidationException {
         return userService.updateUser(userId, userDto);
     }
 
