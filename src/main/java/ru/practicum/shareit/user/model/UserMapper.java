@@ -1,9 +1,11 @@
 package ru.practicum.shareit.user.model;
 
 import lombok.Data;
+import org.springframework.stereotype.Component;
 import ru.practicum.shareit.user.dto.UserDto;
 
 @Data
+@Component
 public class UserMapper {
     public static UserDto toUserDto(User user) {
         return new UserDto(

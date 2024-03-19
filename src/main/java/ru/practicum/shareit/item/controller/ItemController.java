@@ -2,7 +2,11 @@ package ru.practicum.shareit.item.controller;
 
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.exceptoins.CommentRequestException;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.CommentShortDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemUpdateDto;
 import ru.practicum.shareit.item.service.ItemService;
 
 import javax.validation.Valid;
@@ -25,15 +29,16 @@ public class ItemController {
 
     // Просмотр информации о конкретной вещи по её идентификатору
     @GetMapping("/{itemId}")
-    public ItemDto getItemById(@PathVariable("itemId") Long itemId) {
-        return itemService.getItemById(itemId);
+    public ItemDto getItemById(@PathVariable("itemId") Long itemId,
+                               @RequestHeader("X-Sharer-User-Id") Long userId) {
+        return itemService.getItemById(itemId, userId);
     }
 
     // Редактирование вещи
     @PatchMapping("/{itemId}")
     public ItemDto updateItem(@RequestHeader("X-Sharer-User-Id") Long userId,
                               @PathVariable("itemId") Long itemId,
-                              @RequestBody ItemDto itemDto) {
+                              @RequestBody ItemUpdateDto itemDto) {
         return itemService.updateItem(userId, itemId, itemDto);
     }
 
@@ -52,5 +57,15 @@ public class ItemController {
         } else {
             return itemService.searchItems(userId, text);
         }
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto createItemComment(@RequestBody final CommentShortDto commentShortDto,
+                                        @PathVariable final Long itemId,
+                                        @RequestHeader("X-Sharer-User-Id") Long userId) {
+        if (commentShortDto.getText().isBlank()) {
+            throw new CommentRequestException("Текст комментария не может быть пустым");
+        }
+        return itemService.addNewComment(commentShortDto, itemId, userId);
     }
 }
