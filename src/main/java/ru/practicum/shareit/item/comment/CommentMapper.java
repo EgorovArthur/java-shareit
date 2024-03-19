@@ -4,18 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.CommentShortDto;
-import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.model.ItemMapper;
-import ru.practicum.shareit.item.repository.ItemRepository;
-import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
 
 @Component
 @RequiredArgsConstructor
 public class CommentMapper {
-
-    private final ItemRepository itemRepository;
-    private final UserRepository userRepository;
 
     public static CommentDto toCommentDto(Comment comment) {
         return CommentDto.builder()
@@ -37,14 +30,10 @@ public class CommentMapper {
                 .build();
     }
 
-    public Comment toComment(CommentShortDto commentShortDto, Long itemId, Long userId) {
-        Item item = itemRepository.findById(itemId).orElseThrow();
-        User user = userRepository.findById(userId).orElseThrow();
+    public Comment toComment(CommentShortDto commentShortDto) {
         return Comment.builder()
                 .id(commentShortDto.getId())
                 .text(commentShortDto.getText())
-                .item(item)
-                .author(user)
                 .created(commentShortDto.getCreated())
                 .build();
     }

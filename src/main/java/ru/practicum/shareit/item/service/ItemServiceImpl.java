@@ -8,8 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exceptoins.AccessException;
+import ru.practicum.shareit.exceptoins.CommentRequestException;
 import ru.practicum.shareit.exceptoins.NotFoundException;
 import ru.practicum.shareit.item.comment.Comment;
+import ru.practicum.shareit.item.comment.CommentMapper;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.CommentShortDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemUpdateDto;
 import ru.practicum.shareit.item.model.Item;
@@ -19,6 +23,7 @@ import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +40,7 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final CommentMapper commentMapper;
 
     @Override
     @Transactional
@@ -107,6 +113,33 @@ public class ItemServiceImpl implements ItemService {
                 .filter(item -> item.getAvailable().equals(true))
                 .map(ItemMapper::toItemDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public CommentDto addNewComment(CommentShortDto commentDto, Long itemId, Long userId) {
+        Comment comment = commentMapper.toComment(commentDto);
+        Item item = itemRepository.findById(itemId).orElseThrow(() ->
+                new NotFoundException(String.format("Вещь с id=%d не найдена", itemId)));
+        comment.setItem(item);
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                new NotFoundException(String.format("Пользователь с id=%d не найден", userId)));
+        comment.setAuthor(user);
+        if (!bookingRepository.existsBookingByItemAndBookerAndStatusNotAndStart(comment.getItem(),
+                comment.getAuthor(), LocalDateTime.now())) {
+            throw new CommentRequestException("Нельзя оставить комменатрий к вещи, если она не была взята в аренду" +
+                    "или аренда еще не началась");
+        }
+        comment.setCreated(LocalDateTime.now());
+        log.info("Пользователь id={} добавил комментарий id={} к вещи id={}",
+                comment.getAuthor().getId(), comment.getId(), comment.getItem().getId());
+        return CommentMapper.toCommentDto(commentRepository.save(comment));
+    }
+
+    @Override
+    public CommentDto getCommentById(Long commentId) {
+        return CommentMapper.toCommentDto(commentRepository.findById(commentId).orElseThrow(() ->
+                new NotFoundException(String.format("Комментарий с id=%d не найден", commentId))));
     }
 
     private int compareBookingDates(ItemDto itemDto1, ItemDto itemDto2) {

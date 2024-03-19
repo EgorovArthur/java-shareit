@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,10 +39,8 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     public BookingDtoOut createBooking(Long userId, BookingDtoIn bookingDtoIn) {
         validateBookingTime(bookingDtoIn.getStart(), bookingDtoIn.getEnd());
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-        Item item = itemRepository.findById(bookingDtoIn.getItemId())
-                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
+        User user = findUserById(userId);
+        Item item = findItemById(bookingDtoIn.getItemId());
         if (!item.getAvailable()) {
             throw new BookingValidationException("Вещь не достпуна для бронирования");
         }
@@ -58,9 +55,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingDtoOut approveBooking(Long bookingId, Long ownerId, Boolean isApproved) {
-        Optional<Booking> optionalBooking = bookingRepository.findById(bookingId);
-        Booking booking = optionalBooking.orElseThrow(() ->
-                new NotFoundException(String.format("Бронирование с id=%d не найдено", bookingId)));
+        Booking booking = findBookingById(bookingId);
         if (!booking.getStatus().equals(BookingStatus.WAITING)) {
             throw new BookingValidationException("Бронирование было подтверждено ранее");
         }
@@ -76,11 +71,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDtoOut getBooking(Long bookingId, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-        Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
-        Booking booking = bookingOptional.orElseThrow(() ->
-                new NotFoundException(String.format("Бронирование с id=%d не найдено", bookingId)));
+        User user = findUserById(userId);
+        Booking booking = findBookingById(bookingId);
         if (!booking.getBooker().equals(user) && !booking.getItem().getOwner().equals(user)) {
             throw new AccessException("Просмотр информации о бронировании доступен только владельцу вещи или " +
                     "владельцу брони");
@@ -91,13 +83,28 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Collection<BookingDtoOut> getAllBookingsByUser(Long userId, String state) {
         return getBookingsByUser(userId, state, () ->
-                bookingRepository.findByBooker(userRepository.findById(userId).orElseThrow()));
+                bookingRepository.findByBooker(findUserById(userId)));
     }
 
     @Override
     public Collection<BookingDtoOut> getBookingsForUserItems(Long userId, String state) {
         return getBookingsByUser(userId, state, () ->
-                bookingRepository.findByItemOwner(userRepository.findById(userId).orElseThrow()));
+                bookingRepository.findByItemOwner(findUserById(userId)));
+    }
+
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+    }
+
+    private Item findItemById(Long itemId) {
+        return itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
+    }
+
+    private Booking findBookingById(Long bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new NotFoundException(String.format("Бронирование с id=%d не найдено", bookingId)));
     }
 
     private Collection<BookingDtoOut> getBookingsByUser(Long userId, String state, Supplier<List<Booking>> bookingSupplier) {

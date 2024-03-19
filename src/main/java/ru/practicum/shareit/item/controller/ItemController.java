@@ -7,7 +7,6 @@ import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.CommentShortDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemUpdateDto;
-import ru.practicum.shareit.item.service.CommentService;
 import ru.practicum.shareit.item.service.ItemService;
 
 import javax.validation.Valid;
@@ -21,7 +20,6 @@ import java.util.List;
 public class ItemController {
 
     private final ItemService itemService;
-    private final CommentService commentService;
 
     // Добавление новой вещи пользователем
     @PostMapping
@@ -68,6 +66,6 @@ public class ItemController {
         if (commentShortDto.getText().isBlank()) {
             throw new CommentRequestException("Текст комментария не может быть пустым");
         }
-        return commentService.addNewComment(commentShortDto, itemId, userId);
+        return itemService.addNewComment(commentShortDto, itemId, userId);
     }
 }
