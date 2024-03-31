@@ -102,6 +102,30 @@ class ItemServiceImplTest {
     }
 
     @Test
+    void updateItem_whenAvailableChanged_shouldSetAvailable() {
+        Item item = ItemMapper.toItem(itemDto, user);
+        item.setAvailable(false);
+        item.setRequest(itemRequest);
+
+        ItemUpdateDto itemUpdateDto = ItemUpdateDto.builder()
+                .available(true)
+                .build();
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+        when(itemRepository.save(item)).thenReturn(item);
+
+        ItemDto result = itemService.updateItem(user.getId(), item.getId(), itemUpdateDto);
+
+        assertTrue(result.getAvailable());
+
+        verify(itemRepository).findById(item.getId());
+        verify(userRepository).findById(user.getId());
+        verify(itemRepository).save(item);
+    }
+
+
+    @Test
     void updateItem_shouldThrowNotFoundException_whenUserNotFound() {
         Item item = ItemMapper.toItem(itemDto, user);
         item.setRequest(itemRequest);
@@ -178,6 +202,7 @@ class ItemServiceImplTest {
         verify(requestRepository).findById(100L);
         verify(itemRepository, never()).save(any(Item.class));
     }
+
 
     @Test
     void getItemById() {
