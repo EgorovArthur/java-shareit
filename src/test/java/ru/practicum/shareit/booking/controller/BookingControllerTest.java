@@ -138,6 +138,24 @@ class BookingControllerTest {
 
     @SneakyThrows
     @Test
+    void getUserBookings_whenFromOrSizeNegative_shouldThrowBadRequestException() {
+        mockMvc.perform(get("/bookings")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("from", "-1")
+                        .param("size", "10"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/bookings")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("from", "0")
+                        .param("size", "-1"))
+                .andExpect(status().isBadRequest());
+
+        verify(bookingService, never()).getAllBookingsByUser(anyLong(), anyString(), anyInt(), anyInt());
+    }
+
+    @SneakyThrows
+    @Test
     void getBookingsForUserItems() {
         when(bookingService.getBookingsForUserItems(anyLong(), eq("ALL"), anyInt(), anyInt()))
                 .thenReturn(List.of(bookingDto, approvedBooking));
@@ -161,5 +179,23 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$[1].item.id", is(approvedBooking.getItem().getId()), Long.class));
 
         verify(bookingService).getBookingsForUserItems(anyLong(), eq("ALL"), anyInt(), anyInt());
+    }
+
+    @SneakyThrows
+    @Test
+    void getBookingsForUserItems_whenFromOrSizeNegative_shouldThrowBadRequestException() {
+        mockMvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("from", "-1")
+                        .param("size", "10"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("from", "0")
+                        .param("size", "-1"))
+                .andExpect(status().isBadRequest());
+
+        verify(bookingService, never()).getBookingsForUserItems(anyLong(), anyString(), anyInt(), anyInt());
     }
 }

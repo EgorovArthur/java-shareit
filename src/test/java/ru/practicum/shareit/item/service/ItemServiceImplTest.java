@@ -12,10 +12,12 @@ import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exceptoins.AccessException;
+import ru.practicum.shareit.exceptoins.CommentRequestException;
 import ru.practicum.shareit.exceptoins.NotFoundException;
 import ru.practicum.shareit.item.comment.Comment;
 import ru.practicum.shareit.item.comment.CommentMapper;
 import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.CommentShortDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemUpdateDto;
 import ru.practicum.shareit.item.model.Item;
@@ -66,6 +68,14 @@ class ItemServiceImplTest {
             .id(itemDto.getRequestId())
             .description("request desc")
             .build();
+    private final Item item = Item.builder().id(1L).name("item2Name").description("item2Desc").available(true)
+            .owner(user).build();
+    private final Comment comment = Comment.builder().id(1L).text("comment1").item(item).author(user)
+            .created(LocalDateTime.now()).build();
+    private final CommentShortDto commentShortDto = CommentShortDto.builder().id(1L).text("comment1")
+            .itemId(item.getId()).authorName(user.getName()).created(LocalDateTime.now()).build();
+    private final CommentDto commentDto = CommentDto.builder().id(1L).text("comment1").item(ItemMapper.toItemDto(item))
+            .authorName(user.getName()).created(comment.getCreated()).build();
 
     @Test
     void updateItem() {
@@ -280,14 +290,67 @@ class ItemServiceImplTest {
     }
 
     @Test
+    void addNewComment() {
+        when(commentMapper.toComment(any(), any(), any())).thenReturn(comment);
+        when(commentRepository.save(any())).thenReturn(comment);
+        when(itemRepository.findById(item.getId())).thenReturn(java.util.Optional.of(item));
+        when(userRepository.findById(user.getId())).thenReturn(java.util.Optional.of(user));
+        when(bookingRepository.existsBookingByItemAndBookerAndStatusNotAndStart(any(), any(), any()))
+                .thenReturn(true);
+        CommentDto addedComment = itemService.addNewComment(commentShortDto, item.getId(), user.getId());
+
+        assertEquals(comment.getText(), addedComment.getText());
+        assertEquals(comment.getId(), addedComment.getId());
+        assertEquals(comment.getAuthor().getName(), addedComment.getAuthorName());
+        assertEquals(comment.getItem().getId(), addedComment.getItem().getId());
+
+        verify(bookingRepository).existsBookingByItemAndBookerAndStatusNotAndStart(eq(item), eq(user), any());
+        verify(commentRepository).save(any());
+    }
+
+    @Test
+    public void testAddNewCommentWithNotBooking() {
+        when(commentMapper.toComment(any(), any(), any())).thenReturn(comment);
+        when(itemRepository.findById(item.getId())).thenReturn(java.util.Optional.of(item));
+        when(userRepository.findById(user.getId())).thenReturn(java.util.Optional.of(user));
+        when(bookingRepository.existsBookingByItemAndBookerAndStatusNotAndStart(any(), any(), any()))
+                .thenReturn(false);
+
+        assertThrows(CommentRequestException.class, () -> itemService
+                .addNewComment(commentShortDto, item.getId(), user.getId()));
+
+        verify(bookingRepository).existsBookingByItemAndBookerAndStatusNotAndStart(eq(item), eq(user), any());
+        verify(commentRepository, never()).save(comment);
+    }
+
+    @Test
+    public void testAddNewCommentWithNotFoundItem() {
+        when(itemRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> itemService
+                .addNewComment(commentShortDto, item.getId(), user.getId()));
+
+        verify(itemRepository).findById(eq(item.getId()));
+        verify(bookingRepository, never()).existsBookingByItemAndBookerAndStatusNotAndStart(any(), any(), any());
+        verify(commentRepository, never()).save(comment);
+    }
+
+    @Test
+    public void testAddNewCommentWithNotFoundUser() {
+        when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
+        when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> itemService
+                .addNewComment(commentShortDto, item.getId(), user.getId()));
+
+        verify(itemRepository).findById(eq(item.getId()));
+        verify(userRepository).findById(eq(user.getId()));
+        verify(bookingRepository, never()).existsBookingByItemAndBookerAndStatusNotAndStart(any(), any(), any());
+        verify(commentRepository, never()).save(comment);
+    }
+
+    @Test
     void getCommentById() {
-        User user = new User(1L, "user", "user@mail.ru");
-        Item item = Item.builder().id(1L).name("item2Name").description("item2Desc").available(true)
-                .owner(user).build();
-        Comment comment = Comment.builder().id(1L).text("comment1").item(item).author(user)
-                .created(LocalDateTime.now()).build();
-        CommentDto commentDto = CommentDto.builder().id(1L).text("comment1").item(ItemMapper.toItemDto(item))
-                .authorName(user.getName()).created(comment.getCreated()).build();
         when(commentRepository.findById(anyLong())).thenReturn(Optional.of(comment));
 
         CommentDto result = itemService.getCommentById(comment.getId());
@@ -296,12 +359,7 @@ class ItemServiceImplTest {
     }
 
     @Test
-    public void testGetCommentWithWrongId() {
-        User user = new User(1L, "user", "user@mail.ru");
-        Item item = Item.builder().id(1L).name("item2Name").description("item2Desc").available(true)
-                .owner(user).build();
-        Comment comment = Comment.builder().id(1L).text("comment1").item(item).author(user)
-                .created(LocalDateTime.now()).build();
+    public void testGetCommentWithNotId() {
         when(commentRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> itemService.getCommentById(comment.getId()));

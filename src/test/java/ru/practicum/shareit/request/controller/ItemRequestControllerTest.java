@@ -17,8 +17,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -58,11 +57,28 @@ class ItemRequestControllerTest {
 
     @SneakyThrows
     @Test
+    void createNewRequest_whenDescriptionEmpty_shouldThrowBadRequestException() {
+        ItemRequestDto requestDtoWithEmptyDescription = ItemRequestDto.builder()
+                .id(1L)
+                .description("")
+                .build();
+
+        mockMvc.perform(post("/requests")
+                        .header("X-Sharer-User-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDtoWithEmptyDescription)))
+                .andExpect(status().isBadRequest());
+
+        verify(requestService, never()).addRequest(any(), any());
+    }
+
+    @SneakyThrows
+    @Test
     void getUserRequests() {
         when(requestService.getUserRequests(1L)).thenReturn(List.of(requestDto));
         String result = mockMvc.perform(get("/requests")
-                .header("X-Sharer-User-Id", 1)
-                .contentType(MediaType.APPLICATION_JSON))
+                        .header("X-Sharer-User-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -77,7 +93,7 @@ class ItemRequestControllerTest {
     @SneakyThrows
     @Test
     void getAllRequests() {
-        when(requestService.getAllRequestsForAllUsers(1L,0,10)).thenReturn(List.of(requestDto));
+        when(requestService.getAllRequestsForAllUsers(1L, 0, 10)).thenReturn(List.of(requestDto));
         String result = mockMvc.perform(get("/requests/all")
                         .header("X-Sharer-User-Id", 1)
                         .contentType(MediaType.APPLICATION_JSON))
@@ -88,22 +104,34 @@ class ItemRequestControllerTest {
         assertNotNull(result);
         assertEquals(objectMapper.writeValueAsString(List.of(requestDto)), result);
 
-        verify(requestService).getAllRequestsForAllUsers(1L,0,10);
+        verify(requestService).getAllRequestsForAllUsers(1L, 0, 10);
+    }
+
+    @SneakyThrows
+    @Test
+    void getAllRequests_whenFromNegative_shouldThrowBadRequestException() {
+        mockMvc.perform(get("/requests/all")
+                        .header("X-Sharer-User-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .param("from", "-1"))
+                .andExpect(status().isBadRequest());
+
+        verify(requestService, never()).getAllRequestsForAllUsers(any(), any(), any());
     }
 
     @SneakyThrows
     @Test
     void getRequestById() {
-        when(requestService.getRequestById(1L,1L)).thenReturn(requestDto);
-        String result = mockMvc.perform(get("/requests/{requestId}",1L)
-                .header("X-Sharer-User-Id", 1)
-                .contentType(MediaType.APPLICATION_JSON))
+        when(requestService.getRequestById(1L, 1L)).thenReturn(requestDto);
+        String result = mockMvc.perform(get("/requests/{requestId}", 1L)
+                        .header("X-Sharer-User-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
         assertNotNull(result);
-        assertEquals(result,objectMapper.writeValueAsString(requestDto));
+        assertEquals(result, objectMapper.writeValueAsString(requestDto));
 
         verify(requestService).getRequestById(1L, 1L);
     }

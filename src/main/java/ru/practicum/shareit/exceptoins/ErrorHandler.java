@@ -17,12 +17,6 @@ public class ErrorHandler {
         return Map.of("Объект не найден", e.getMessage());
     }
 
-//    @ExceptionHandler
-//    @ResponseStatus(HttpStatus.CONFLICT)
-//    public Map<String, String> handleValidationException(final ValidationException e) {
-//        return Map.of("Ошибка валидации данных", e.getMessage());
-//    }
-
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleAccessException(final AccessException e) {
