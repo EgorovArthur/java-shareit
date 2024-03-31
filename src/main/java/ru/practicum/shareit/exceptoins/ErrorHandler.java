@@ -1,6 +1,7 @@
 package ru.practicum.shareit.exceptoins;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,11 +17,11 @@ public class ErrorHandler {
         return Map.of("Объект не найден", e.getMessage());
     }
 
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public Map<String, String> handleValidationException(final ValidationException e) {
-        return Map.of("Ошибка валидации данных", e.getMessage());
-    }
+//    @ExceptionHandler
+//    @ResponseStatus(HttpStatus.CONFLICT)
+//    public Map<String, String> handleValidationException(final ValidationException e) {
+//        return Map.of("Ошибка валидации данных", e.getMessage());
+//    }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -42,7 +43,19 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleBadRequestException(final CommentRequestException e) {
+    public Map<String, String> handleCommentRequestException(final CommentRequestException e) {
         return Map.of("Ошибка запроса ", e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleBadRequestException(final BadRequestException e) {
+        return Map.of("Ошибка запроса ", e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleMethodArgumentNotValidException(final MethodArgumentNotValidException e) {
+        return Map.of("Ошибка валидации ", e.getMessage());
     }
 }

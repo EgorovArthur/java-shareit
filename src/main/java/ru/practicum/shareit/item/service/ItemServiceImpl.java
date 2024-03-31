@@ -3,6 +3,8 @@ package ru.practicum.shareit.item.service;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.model.Booking;
@@ -20,6 +22,8 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.model.ItemMapper;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
@@ -41,6 +45,7 @@ public class ItemServiceImpl implements ItemService {
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
+    private final ItemRequestRepository itemRequestRepository;
 
     @Override
     @Transactional
@@ -71,6 +76,11 @@ public class ItemServiceImpl implements ItemService {
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         Item item = ItemMapper.toItem(itemDto, owner);
+        if (itemDto.getRequestId() != null) {
+            ItemRequest itemRequest = itemRequestRepository.findById(itemDto.getRequestId()).orElseThrow(() ->
+                    new NotFoundException(String.format("Запрос с id=%d не найден", item.getRequest().getId())));
+            item.setRequest(itemRequest);
+        }
         return ItemMapper.toItemDto(itemRepository.save(item));
     }
 
@@ -88,10 +98,11 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDto> getAllItemsByOwnerId(Long userId) {
+    public List<ItemDto> getAllItemsByOwnerId(Long userId, Integer from, Integer size) {
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-        List<Item> userItems = itemRepository.findByOwner(owner);
+        PageRequest pageRequest = PageRequest.of(from / size, size);
+        List<Item> userItems = itemRepository.findByOwner(owner, pageRequest);
         return userItems.stream().map(item ->
                         ItemMapper.toItemDto(item, commentRepository.findByItemOrderByIdAsc(item),
                                 bookingRepository.findByItem(item)))
@@ -108,8 +119,9 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDto> searchItems(Long userId, String text) {
-        return itemRepository.search(text).stream()
+    public List<ItemDto> searchItems(Long userId, String text, Integer from, Integer size) {
+        PageRequest pageRequest = PageRequest.of(from / size, size, Sort.by("name").ascending());
+        return itemRepository.search(text, pageRequest).stream()
                 .filter(item -> item.getAvailable().equals(true))
                 .map(ItemMapper::toItemDto)
                 .collect(Collectors.toList());
@@ -118,13 +130,11 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public CommentDto addNewComment(CommentShortDto commentDto, Long itemId, Long userId) {
-        Comment comment = commentMapper.toComment(commentDto);
         Item item = itemRepository.findById(itemId).orElseThrow(() ->
                 new NotFoundException(String.format("Вещь с id=%d не найдена", itemId)));
-        comment.setItem(item);
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new NotFoundException(String.format("Пользователь с id=%d не найден", userId)));
-        comment.setAuthor(user);
+        Comment comment = commentMapper.toComment(commentDto, user, item);
         if (!bookingRepository.existsBookingByItemAndBookerAndStatusNotAndStart(comment.getItem(),
                 comment.getAuthor(), LocalDateTime.now())) {
             throw new CommentRequestException("Нельзя оставить комменатрий к вещи, если она не была взята в аренду" +

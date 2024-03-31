@@ -13,7 +13,7 @@ public interface BookingService {
 
     BookingDtoOut getBooking(Long bookingId, Long userId);
 
-    Collection<BookingDtoOut> getAllBookingsByUser(Long userId, String state);
+    Collection<BookingDtoOut> getAllBookingsByUser(Long userId, String state, Integer from, Integer size);
 
-    Collection<BookingDtoOut> getBookingsForUserItems(Long userId, String state);
+    Collection<BookingDtoOut> getBookingsForUserItems(Long userId, String state, Integer from, Integer size);
 }

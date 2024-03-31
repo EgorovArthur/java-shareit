@@ -2,6 +2,8 @@ package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.BookingDtoIn;
@@ -21,7 +23,6 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -81,15 +82,27 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Collection<BookingDtoOut> getAllBookingsByUser(Long userId, String state) {
-        return getBookingsByUser(userId, state, () ->
-                bookingRepository.findByBooker(findUserById(userId)));
+    public Collection<BookingDtoOut> getAllBookingsByUser(Long userId, String state, Integer from, Integer size) {
+        StateOfBookingRequest stateIn = getState(state);
+        User user = userRepository.findById(userId).orElseThrow();
+
+        PageRequest page = PageRequest.of(from / size, size, Sort.by("start").descending());
+        List<Booking> userBookings = bookingRepository.findByBooker(user, page);
+        log.info("Список всех бронирований со статусом {} пользователя с id={} успешно получен", state, userId);
+        return getBookingsByState(userBookings, stateIn)
+                .stream().map(BookingMapper::toBookingDtoOut).collect(Collectors.toList());
     }
 
     @Override
-    public Collection<BookingDtoOut> getBookingsForUserItems(Long userId, String state) {
-        return getBookingsByUser(userId, state, () ->
-                bookingRepository.findByItemOwner(findUserById(userId)));
+    public Collection<BookingDtoOut> getBookingsForUserItems(Long userId, String state, Integer from, Integer size) {
+        StateOfBookingRequest stateIn = getState(state);
+        User user = userRepository.findById(userId).orElseThrow();
+
+        PageRequest page = PageRequest.of(from / size, size, Sort.by("start").descending());
+        List<Booking> userBookings = bookingRepository.findByItemOwner(user, page);
+        log.info("Список бронирований со статусом {} для вещей пользователя с id={} успешно получен", state, userId);
+        return getBookingsByState(userBookings, stateIn)
+                .stream().map(BookingMapper::toBookingDtoOut).collect(Collectors.toList());
     }
 
     private User findUserById(Long userId) {
@@ -105,14 +118,6 @@ public class BookingServiceImpl implements BookingService {
     private Booking findBookingById(Long bookingId) {
         return bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new NotFoundException(String.format("Бронирование с id=%d не найдено", bookingId)));
-    }
-
-    private Collection<BookingDtoOut> getBookingsByUser(Long userId, String state, Supplier<List<Booking>> bookingSupplier) {
-        StateOfBookingRequest stateIn = getState(state);
-        List<Booking> userBookings = bookingSupplier.get();
-        log.info("Список всех бронирований со статусом {} пользователя с id={} успешно получен", state, userId);
-        return getBookingsByState(userBookings, stateIn)
-                .stream().map(BookingMapper::toBookingDtoOut).collect(Collectors.toList());
     }
 
     private Collection<Booking> getBookingsByState(List<Booking> allBookings, StateOfBookingRequest state) {
@@ -155,4 +160,5 @@ public class BookingServiceImpl implements BookingService {
             throw new BookingValidationException("Неправильное время бронирования. Время начала и время окончания не могут совпадать");
         }
     }
+
 }
