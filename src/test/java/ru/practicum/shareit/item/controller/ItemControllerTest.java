@@ -18,12 +18,14 @@ import ru.practicum.shareit.item.service.ItemService;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest(ItemController.class)
 @Validated
@@ -185,6 +187,45 @@ class ItemControllerTest {
 
     @SneakyThrows
     @Test
+    void searchItemWithIncorrectParameter() throws Exception {
+        ItemDto dtoForSearch = ItemDto.builder().id(2L).name("Щетка для обуви")
+                .description("Хорошо чистит").available(true)
+                .build();
+        when(itemService.searchItems(anyLong(), anyString(), anyInt(), anyInt()))
+                .thenReturn(List.of(dtoForSearch));
+
+        mockMvc.perform(get("/items/search")
+                        .param("text", "")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+
+        verify(itemService, never()).searchItems(anyLong(), anyString(), anyInt(), anyInt());
+    }
+
+    @SneakyThrows
+    @Test
+    void searchItemWithIncorrectPageParameters() {
+        int invalidPage = -1;
+        int invalidSize = -10;
+
+        ItemDto dtoForSearch = ItemDto.builder().id(2L).name("Мыльница")
+                .description("Красивая и удобная").available(true)
+                .build();
+        when(itemService.searchItems(anyLong(), anyString(), anyInt(), anyInt()))
+                .thenReturn(List.of(dtoForSearch));
+
+        mockMvc.perform(get("/items/search")
+                        .param("text", "мыл")
+                        .param("page", String.valueOf(invalidPage))
+                        .param("size", String.valueOf(invalidSize)))
+                .andExpect(status().isBadRequest());
+
+        verify(itemService, never()).searchItems(anyLong(), anyString(), eq(invalidPage), eq(invalidSize));
+    }
+
+    @SneakyThrows
+    @Test
     void createItemComment() {
         CommentShortDto shortDto = CommentShortDto.builder().id(1L).text("test comment").itemId(1L)
                 .authorName("authorName").created(LocalDateTime.now()).build();
@@ -212,5 +253,25 @@ class ItemControllerTest {
         assertEquals(commentDto.getCreated(), actualDto.getCreated());
 
         verify(itemService).addNewComment(any(CommentShortDto.class), anyLong(), anyLong());
+    }
+
+    @SneakyThrows
+    @Test
+    void createItemCommentWithoutText() {
+        CommentDto commentDto = CommentDto.builder().id(1L).text("test comment").item(itemDto)
+                .authorName("authorName").created(LocalDateTime.now()).build();
+        CommentShortDto shortInvalidDto = CommentShortDto.builder().text("").build();
+
+        when(itemService.addNewComment(any(CommentShortDto.class), anyLong(), anyLong()))
+                .thenReturn(commentDto);
+
+        mockMvc.perform(post("/items/{itemId}/comment", 1)
+                        .header("X-Sharer-User-Id", 1)
+                        .content(objectMapper.writeValueAsString(shortInvalidDto))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verify(itemService, never()).addNewComment(any(CommentShortDto.class), anyLong(), anyLong());
     }
 }

@@ -51,7 +51,6 @@ class UserControllerTest {
         verify(userService).addUser(userDto);
     }
 
-
     @SneakyThrows
     @Test
     void testGetUsers() {

@@ -405,4 +405,14 @@ class ItemServiceImplTest {
 
         assertThrows(NotFoundException.class, () -> itemService.getCommentById(comment.getId()));
     }
+
+    @Test
+    void testCommentShortDto() {
+        CommentShortDto convertedDto = CommentMapper.toCommentShortDto(comment);
+
+        assertNotNull(convertedDto.getText());
+        assertEquals(comment.getItem().getId(), convertedDto.getItemId());
+        assertEquals(comment.getAuthor().getId(), convertedDto.getId());
+        assertEquals(comment.getCreated(), convertedDto.getCreated());
+    }
 }
