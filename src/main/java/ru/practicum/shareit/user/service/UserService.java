@@ -1,9 +1,9 @@
 package ru.practicum.shareit.user.service;
 
-import ru.practicum.shareit.exceptoins.ValidationException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserUpdateDto;
 
+import javax.xml.bind.ValidationException;
 import java.util.Collection;
 
 public interface UserService {

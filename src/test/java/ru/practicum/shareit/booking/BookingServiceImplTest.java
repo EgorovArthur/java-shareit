@@ -262,6 +262,22 @@ class BookingServiceImplTest {
     }
 
     @Test
+    void testGetBookingsForUserItemsWithWaitingStatus() {
+        List<Booking> userBookings = new ArrayList<>();
+        userBookings.add(new Booking(1L, LocalDateTime.now().plusHours(1), LocalDateTime.now().plusHours(2), item, booker, BookingStatus.WAITING));
+        userBookings.add(new Booking(2L, LocalDateTime.now().plusHours(3), LocalDateTime.now().plusHours(4), item, booker, BookingStatus.APPROVED));
+
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(booker));
+        when(bookingRepository.findByItemOwner(any(User.class), any(Pageable.class))).thenReturn(userBookings);
+
+        Collection<BookingDtoOut> results = bookingService
+                .getBookingsForUserItems(owner.getId(), "WAITING", 0, 10);
+
+        assertEquals(1, results.size());
+        assertEquals(BookingStatus.WAITING, results.iterator().next().getStatus());
+    }
+
+    @Test
     void testGetBookingsForUserItemsWithRejectedStatus() {
         List<Booking> userBookings = new ArrayList<>();
         userBookings.add(new Booking(1L, LocalDateTime.now().minusDays(2), LocalDateTime.now().minusDays(1), item, booker, BookingStatus.REJECTED));
