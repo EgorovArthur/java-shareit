@@ -141,6 +141,22 @@ class ItemServiceImplTest {
     }
 
     @Test
+    void updateItem_shouldThrowNotFoundException_whenItemNotFound() {
+        Item item = ItemMapper.toItem(itemDto, user);
+        item.setRequest(itemRequest);
+
+        ItemUpdateDto itemUpdateDto = ItemUpdateDto.builder()
+                .name("UpdateName")
+                .description("Update desc")
+                .build();
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(itemRepository.findById(item.getId())).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> itemService.updateItem(user.getId(), item.getId(), itemUpdateDto));
+    }
+
+    @Test
     void updateItem_shouldThrowAccessException_whenUserIsNotOwner() {
         Item item = ItemMapper.toItem(itemDto, user);
 

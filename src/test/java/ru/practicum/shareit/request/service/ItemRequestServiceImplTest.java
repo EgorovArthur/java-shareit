@@ -99,10 +99,11 @@ class ItemRequestServiceImplTest {
     void getUserRequests_shouldThrowNotFoundException_whenUserNotFound() {
         when(userRepository.findById(100L)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> requestService.addRequest(requestDto, 100L));
+        assertThrows(NotFoundException.class, () -> requestService.getUserRequests(100L));
 
         verify(userRepository).findById(100L);
         verify(requestRepository, never()).findAllByRequestorOrderByCreated(any(User.class));
+        verifyNoMoreInteractions(userRepository, requestRepository);
     }
 
     @Test
@@ -135,12 +136,13 @@ class ItemRequestServiceImplTest {
     @Test
     void getRequestById_shouldThrowNotFoundException_whenRequestNotFound() {
         when(userRepository.findById(2L)).thenReturn(Optional.of(requestor));
-        when(requestRepository.findById(100L)).thenThrow(new NotFoundException("Запрос не найден"));
+        when(requestRepository.findById(itemRequest.getId())).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> requestService.getRequestById(2L, 100L));
+        assertThrows(NotFoundException.class, () -> requestService.getRequestById(requestor.getId(), itemRequest.getId()));
 
-        verify(userRepository).findById(anyLong());
-        verify(requestRepository).findById(100L);
+        verify(userRepository).findById(requestor.getId());
+        verify(requestRepository).findById(itemRequest.getId());
+        verifyNoMoreInteractions(userRepository, requestRepository);
     }
 
     @Test

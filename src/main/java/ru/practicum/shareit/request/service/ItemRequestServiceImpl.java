@@ -50,7 +50,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public Collection<ItemRequestDto> getUserRequests(Long userId) {
-        User requestor = userRepository.findById(userId). orElseThrow(() ->
+        User requestor = userRepository.findById(userId).orElseThrow(() ->
                 new NotFoundException(String.format("Пользователь с id=%d не найден", userId)));
         List<ItemRequest> requests = itemRequestRepository.findAllByRequestorOrderByCreated(requestor);
         fillItemsByRequests(requests);
