@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.exceptoins.NotFoundException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
@@ -38,8 +39,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     @Transactional
     public ItemRequestDto addRequest(ItemRequestDto itemRequestDto, Long userId) {
-        User requestor = userRepository.findById(userId). orElseThrow(() ->
-                new NotFoundException(String.format("Пользователь с id=%d не найден", userId)));
+        User requestor = requestorById(userId);
         ItemRequest request = ItemRequestMapper.toItemRequest(itemRequestDto);
         request.setCreated(LocalDateTime.now());
         request.setRequestor(requestor);
@@ -50,8 +50,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public Collection<ItemRequestDto> getUserRequests(Long userId) {
-        User requestor = userRepository.findById(userId).orElseThrow(() ->
-                new NotFoundException(String.format("Пользователь с id=%d не найден", userId)));
+        User requestor = requestorById(userId);
         List<ItemRequest> requests = itemRequestRepository.findAllByRequestorOrderByCreated(requestor);
         fillItemsByRequests(requests);
         return ItemRequestMapper.toItemRequestDtoListItems(requests);
@@ -59,8 +58,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public ItemRequestDto getRequestById(Long userId, Long requestId) {
-        userRepository.findById(userId). orElseThrow(() ->
-                new NotFoundException(String.format("Пользователь с id=%d не найден", userId)));
+        requestorById(userId);
         ItemRequest request = itemRequestRepository.findById(requestId).orElseThrow(() ->
                 new NotFoundException(String.format("Запрос с id=%d не найден", requestId)));
         fillItemsByRequests(List.of(request));
@@ -70,8 +68,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public Collection<ItemRequestDto> getAllRequestsForAllUsers(Long userId, Integer from, Integer size) {
-        User requestor = userRepository.findById(userId).orElseThrow(() ->
-                new NotFoundException(String.format("Пользователь с id=%d не найден", userId)));
+        User requestor = requestorById(userId);
         PageRequest page = PageRequest.of(from / size, size, Sort.by("created").descending());
         List<ItemRequest> requests = itemRequestRepository.findAll(page).stream()
                 .filter(request -> !request.getRequestor().equals(requestor))
@@ -79,6 +76,11 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         fillItemsByRequests(requests);
         log.info("Список всех запросов успешно получен пользователем с id={}", userId);
         return ItemRequestMapper.toItemRequestDtoListItems(requests);
+    }
+
+    private User requestorById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(String.format("Пользователь с id=%d не найден", userId)));
     }
 
     private void fillItemsByRequests(List<ItemRequest> requests) {
