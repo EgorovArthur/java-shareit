@@ -2,11 +2,12 @@ package ru.practicum.shareit.user.controller;
 
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.exceptoins.ValidationException;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserUpdateDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
+import javax.xml.bind.ValidationException;
 import java.util.Collection;
 
 @RestController
@@ -35,7 +36,7 @@ public class UserController {
 
     //Обновление данных пользователя
     @PatchMapping("/{userId}")
-    public UserDto updateUser(@PathVariable("userId") Long userId, @RequestBody UserDto userDto)
+    public UserDto updateUser(@PathVariable("userId") Long userId, @RequestBody @Valid UserUpdateDto userDto)
             throws ValidationException {
         return userService.updateUser(userId, userDto);
     }

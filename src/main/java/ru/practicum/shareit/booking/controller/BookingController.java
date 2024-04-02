@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingDtoIn;
 import ru.practicum.shareit.booking.dto.BookingDtoOut;
 import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.exceptoins.BadRequestException;
 
 import javax.validation.Valid;
 import java.util.Collection;
@@ -42,13 +43,27 @@ public class BookingController {
 
     @GetMapping
     public Collection<BookingDtoOut> getUserBookings(@RequestHeader("X-Sharer-User-Id") Long userId,
-                                                     @RequestParam(defaultValue = "ALL") String state) {
-        return bookingService.getAllBookingsByUser(userId, state);
+                                                     @RequestParam(defaultValue = "ALL") String state,
+                                                     @RequestParam(value = "from", required = false,
+                                                             defaultValue = "0") final Integer from,
+                                                     @RequestParam(value = "size", required = false,
+                                                             defaultValue = "10") final Integer size) {
+        if (from < 0 || size < 0) {
+            throw new BadRequestException("Значение from и size не могут быть меньше 0");
+        }
+        return bookingService.getAllBookingsByUser(userId, state, from, size);
     }
 
     @GetMapping("/owner")
     public Collection<BookingDtoOut> getBookingsForUserItems(@RequestHeader("X-Sharer-User-Id") Long userId,
-                                                             @RequestParam(defaultValue = "ALL") String state) {
-        return bookingService.getBookingsForUserItems(userId, state);
+                                                             @RequestParam(defaultValue = "ALL") String state,
+                                                             @RequestParam(value = "from", required = false,
+                                                                     defaultValue = "0") final Integer from,
+                                                             @RequestParam(value = "size", required = false,
+                                                                     defaultValue = "10") final Integer size) {
+        if (from < 0 || size < 0) {
+            throw new BadRequestException("Значение from и size не могут быть меньше 0");
+        }
+        return bookingService.getBookingsForUserItems(userId, state, from, size);
     }
 }
