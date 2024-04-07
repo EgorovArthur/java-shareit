@@ -9,6 +9,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import ru.practicum.shareit.exceptoins.BadRequestException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserUpdateDto;
 import ru.practicum.shareit.user.service.UserService;
@@ -103,21 +104,34 @@ class UserControllerTest {
         verify(userService).updateUser(userId, newUpdateUserDto);
     }
 
-//    @SneakyThrows
-//    @Test
-//    void testUpdateUser_whenUserIsNotValidEmail() {
-//        UserUpdateDto newUserDto = UserUpdateDto.builder()
-//                .email("newEmail.example.com")
-//                .build();
-//
-//
-//        mockMvc.perform(patch("/users/1")
-//                        .content(objectMapper.writeValueAsString(newUserDto))
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .accept(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isBadRequest());
-//        verify(userService, never()).updateUser(1L, newUserDto);
-//    }
+    @SneakyThrows
+    @Test
+    void createNewUserWithInvalidNameOrEmail() {
+        UserDto userWithoutName = UserDto.builder().id(1L).name(null).email("user@name.ru").build();
+        UserDto userWithBlankEmail = UserDto.builder().id(1L).name("userName").email("").build();
+
+        when(userService.addUser(any(UserDto.class))).thenAnswer(invocation -> {
+            UserDto user = invocation.getArgument(0);
+            if (user.getName() == null) {
+                throw new BadRequestException("User name cannot be null");
+            } else if (user.getEmail().isEmpty()) {
+                throw new BadRequestException("User email cannot be blank");
+            }
+            return user;
+        });
+
+        mockMvc.perform(post("/users")
+                        .content(objectMapper.writeValueAsString(userWithoutName))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/users")
+                        .content(objectMapper.writeValueAsString(userWithBlankEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
 
     @SneakyThrows
     @Test

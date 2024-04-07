@@ -1,6 +1,5 @@
 package ru.practicum.shareit_gatevay.user;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -16,11 +15,12 @@ import javax.validation.Valid;
 @Validated
 @RequestMapping(path = "/users")
 public class UserController {
+
     private final UserClient userClient;
 
     //Создание пользователя
     @PostMapping
-    public ResponseEntity<Object> addUser(@Valid @RequestBody UserDto userDto) {
+    public ResponseEntity<Object> addUser(@RequestBody @Valid UserDto userDto) {
         return userClient.addUser(userDto);
     }
 
@@ -32,20 +32,20 @@ public class UserController {
 
     //Получение пользователя по id
     @GetMapping("/{userId}")
-    public ResponseEntity<Object> getUserId(@PathVariable("userId") Long userId) {
+    public ResponseEntity<Object> getUserId(@PathVariable Long userId) {
         return userClient.getUserById(userId);
     }
 
     //Обновление данных пользователя
     @PatchMapping("/{userId}")
-    public ResponseEntity<Object> updateUser(@PathVariable("userId") Long userId,
+    public ResponseEntity<Object> updateUser(@PathVariable Long userId,
                                              @RequestBody @Valid UserUpdateDto userDto) {
         return userClient.updateUser(userId, userDto);
     }
 
     //Удаление пользователя
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Object> deleteUser(@PathVariable("userId") Long userId) {
+    public ResponseEntity<Object> deleteUser(@PathVariable Long userId) {
         return userClient.deleteUser(userId);
     }
 }

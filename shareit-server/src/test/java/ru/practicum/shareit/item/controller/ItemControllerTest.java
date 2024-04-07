@@ -61,43 +61,6 @@ class ItemControllerTest {
         verify(itemService).addItem(1L, itemDto);
     }
 
-//    @SneakyThrows
-//    @Test
-//    void addItemNotInvalidParameters() {
-//        ItemDto itemDtoWithInvalidName = ItemDto.builder().id(1L).name(" ")
-//                .description("desc").available(true).build();
-//        ItemDto itemDtoWithInvalidDescription = ItemDto.builder().id(1L).name("name")
-//                .description("").available(true).build();
-//        ItemDto itemDtoWithInvalidAvailable = ItemDto.builder().id(1L).name("name")
-//                .description("desc").available(null).build();
-//
-//        when(itemService.addItem(anyLong(), any(ItemDto.class))).thenReturn(itemDto);
-//
-//        mockMvc.perform(post("/items")
-//                        .header("X-Sharer-User-Id", 1)
-//                        .content(objectMapper.writeValueAsString(itemDtoWithInvalidName))
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .accept(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isBadRequest());
-//
-//        mockMvc.perform(post("/items")
-//                        .header("X-Sharer-User-Id", 1)
-//                        .content(objectMapper.writeValueAsString(itemDtoWithInvalidDescription))
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .accept(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isBadRequest());
-//
-//        mockMvc.perform(post("/items")
-//                        .header("X-Sharer-User-Id", 1)
-//                        .content(objectMapper.writeValueAsString(itemDtoWithInvalidAvailable))
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .accept(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isBadRequest());
-//
-//        verify(itemService, never()).addItem(anyLong(), any(ItemDto.class));
-//    }
-
-
     @SneakyThrows
     @Test
     void getItemById() {

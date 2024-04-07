@@ -84,7 +84,6 @@ public class BookingServiceImpl implements BookingService {
     public Collection<BookingDtoOut> getAllBookingsByUser(Long userId, String state, Integer from, Integer size) {
         StateOfBookingRequest stateIn = getState(state);
         User user = userRepository.findById(userId).orElseThrow();
-
         PageRequest page = PageRequest.of(from / size, size, Sort.by("start").descending());
         List<Booking> userBookings = bookingRepository.findByBooker(user, page);
         log.info("Список всех бронирований со статусом {} пользователя с id={} успешно получен", state, userId);
@@ -96,7 +95,6 @@ public class BookingServiceImpl implements BookingService {
     public Collection<BookingDtoOut> getBookingsForUserItems(Long userId, String state, Integer from, Integer size) {
         StateOfBookingRequest stateIn = getState(state);
         User user = userRepository.findById(userId).orElseThrow();
-
         PageRequest page = PageRequest.of(from / size, size, Sort.by("start").descending());
         List<Booking> userBookings = bookingRepository.findByItemOwner(user, page);
         log.info("Список бронирований со статусом {} для вещей пользователя с id={} успешно получен", state, userId);

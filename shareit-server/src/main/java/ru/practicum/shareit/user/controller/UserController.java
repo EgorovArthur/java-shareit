@@ -13,6 +13,7 @@ import java.util.Collection;
 @AllArgsConstructor
 @RequestMapping(path = "/users")
 public class UserController {
+
     private final UserService userService;
 
     //Создание пользователя

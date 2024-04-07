@@ -14,7 +14,7 @@ import java.util.Map;
 
 @Service
 public class ItemRequestClient extends BaseClient {
-    private static final String API_PREFIX = "/items";
+    private static final String API_PREFIX = "/requests";
 
     @Autowired
     public ItemRequestClient(@Value("${shareit-server.url}") String serverUrl, RestTemplateBuilder builder) {
