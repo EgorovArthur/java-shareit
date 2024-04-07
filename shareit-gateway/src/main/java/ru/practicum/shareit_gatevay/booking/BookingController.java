@@ -55,7 +55,7 @@ public class BookingController {
                                                           defaultValue = "10") @Positive final Integer size) {
         StateOfBookingRequest state = StateOfBookingRequest.from(stateParam)
                 .orElseThrow(() -> new BookingStateException("Unknown state: " + stateParam));
-        log.info("Get booking with state {}, userId={}, from={}, size={}", stateParam, userId, from, size);
+        log.info("Получены бронирования со статусом {} пользователя с id={}", state, userId);
         return bookingClient.getUserBookings(userId, state, from, size);
     }
 
@@ -68,7 +68,7 @@ public class BookingController {
                                                                   defaultValue = "10") @Positive final Integer size) {
         StateOfBookingRequest state = StateOfBookingRequest.from(stateParam)
                 .orElseThrow(() -> new BookingStateException("Unknown state: " + stateParam));
-        log.info("Get booking with state {}, userId={}, from={}, size={}", stateParam, userId, from, size);
+        log.info("Получены бронирования со статусом {} вещей пользователя с id={}", state, userId);
         return bookingClient.getBookingsForUserItems(userId, state, from, size);
     }
 }

@@ -52,6 +52,7 @@ public class BookingController {
         if (from < 0 || size < 0) {
             throw new BadRequestException("Значение from и size не могут быть меньше 0");
         }
+        log.info("Получены бронирования со статусом {} пользователя с id={}", state, userId);
         return bookingService.getAllBookingsByUser(userId, state, from, size);
     }
 
@@ -65,6 +66,7 @@ public class BookingController {
         if (from < 0 || size < 0) {
             throw new BadRequestException("Значение from и size не могут быть меньше 0");
         }
+        log.info("Получены бронирования со статусом {} вещей пользователя с id={}", state, userId);
         return bookingService.getBookingsForUserItems(userId, state, from, size);
     }
 }

@@ -26,7 +26,9 @@ public class ItemController {
 
     // Добавление новой вещи пользователем
     @PostMapping
-    public ResponseEntity<Object> addItem(@RequestHeader("X-Sharer-User-Id") Long userId, @RequestBody @Valid ItemDto itemDto) {
+    public ResponseEntity<Object> addItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+                                          @RequestBody @Valid ItemDto itemDto) {
+        log.info("Пользователь с id={} создал вещь {}", userId, itemDto.getName());
         return itemClient.addItem(userId, itemDto);
     }
 
@@ -34,6 +36,7 @@ public class ItemController {
     @GetMapping("/{itemId}")
     public ResponseEntity<Object> getItemById(@PathVariable("itemId") Long itemId,
                                               @RequestHeader("X-Sharer-User-Id") Long userId) {
+        log.info("Пользователем с id={} получена вещь с id={}", userId, itemId);
         return itemClient.getItemById(itemId, userId);
     }
 
@@ -42,6 +45,7 @@ public class ItemController {
     public ResponseEntity<Object> updateItem(@RequestHeader("X-Sharer-User-Id") Long userId,
                                              @PathVariable("itemId") Long itemId,
                                              @RequestBody ItemUpdateDto itemDto) {
+        log.info("Пользователь с id={} обновил вещь с id={}", userId, itemId);
         return itemClient.updateItem(userId, itemId, itemDto);
     }
 
@@ -80,6 +84,7 @@ public class ItemController {
         if (commentShortDto.getText().isBlank()) {
             throw new IllegalArgumentException("Текст комментария не может быть пустым");
         }
+        log.info("Пользователь с id={} добавил комментарий к вещи с id={}", userId, itemId);
         return itemClient.addNewComment(commentShortDto, itemId, userId);
     }
 }
